@@ -34,6 +34,7 @@ class TelegramBotMiddleware
     if req.post? and req.path == "/#{@config.token}"
       
       #build an openstruct based on post params
+      req.body.rewind  # in case someone already read it
       params = JSON.parse(req.body.read, object_class: OpenStruct)
       
       #build path based on message
