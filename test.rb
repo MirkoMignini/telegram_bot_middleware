@@ -1,0 +1,22 @@
+require 'sinatra'
+require_relative 'telegram_bot_middleware'
+
+use TelegramBotMiddleware do |config|
+  config.token = '138381425:AAEXjzZx5U5wZmiKvFmHjdNMkXJqnkHnum4'
+  config.host = 'https://telegram-bot-middleware.herokuapp.com'
+end
+
+get %r{/hello/?$}i do
+  {
+    text: "Hello #{params['from']['first_name']} #{params['from']['last_name']}!",
+    keyboard: [["A", "B"]]
+  }
+end
+
+get %r{/hello/([\w]+)}i do |name|
+  "Hello #{name}!"
+end
+
+get '/*' do
+  "Sono giapponese \u{0026C4}"
+end
