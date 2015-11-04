@@ -93,12 +93,13 @@ class TelegramBotMiddleware
               
               query = body.clone
               query[:chat_id] = params.message.chat.id unless query.include?(:chat_id)
+              query[:reply_markup] = query[:reply_markup].to_json if query.include?(:reply_markup)
               
               body = Array.new(1) { query[:text] }
             else
               query = {chat_id: params.message.chat.id, text: body.first}
             end
-          
+            puts query.inspect
             send_to_bot('sendMessage', query)
         end
       end

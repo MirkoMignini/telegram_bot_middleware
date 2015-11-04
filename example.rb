@@ -11,7 +11,7 @@ end
 get %r{/hello/?$}i do
   {
     text: "Hello #{params['from']['first_name']} #{params['from']['last_name']}!",
-    keyboard: [["A", "B"]]
+    reply_markup: {keyboard: [%w(A B), ['C', 'D']], resize_keyboard: true, one_time_keyboard: true, selective: false}
   }
 end
 
