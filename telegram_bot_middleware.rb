@@ -10,7 +10,7 @@ require 'http'
 class TelegramBotMiddleware
   TELEGRAM_ENDPOINT = 'https://api.telegram.org/'
   
-  def initialize(app, &block)
+  def initialize(app, &block)    
     @app = app
     
     @config = OpenStruct.new
