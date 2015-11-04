@@ -1,11 +1,8 @@
-require 'ostruct'
-require_relative 'ostruct_nested'
-require 'uri'
-require 'cgi'
-require 'json'
-require 'excon'
 require 'rack'
+require 'uri'
+require 'excon'
 require 'http'
+require_relative 'ostruct_nested'
 
 class TelegramBotMiddleware
   TELEGRAM_ENDPOINT = 'https://api.telegram.org/'
@@ -33,7 +30,7 @@ class TelegramBotMiddleware
           @offset = 0
           loop do
             response = send_to_bot('getUpdates', {offset: @offset})
-            update = JSON.parse(response.data[:body], object_class: OpenStruct)
+            update = OpenStruct.from_json(response.data[:body])
             
             if update.result.any?
               @offset = update.result.last.update_id + 1 
@@ -49,7 +46,7 @@ class TelegramBotMiddleware
         send_to_bot('setWebhook', {url: @config.webhook})
       
       else
-        #TODO
+        raise ArgumentError.new('Config error: get_updates must be :webhook or :polling.')
     end
   end
 
@@ -62,7 +59,7 @@ class TelegramBotMiddleware
       
       #build an openstruct based on post params
       req.body.rewind  # in case someone already read it
-      params = JSON.parse(req.body.read, object_class: OpenStruct)
+      params = OpenStruct.from_json(req.body.read)
       
       #build path based on message
       # - get only message part of post params

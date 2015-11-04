@@ -1,4 +1,4 @@
-require './test'
+require './example'
 
 $stdout.sync = true
 

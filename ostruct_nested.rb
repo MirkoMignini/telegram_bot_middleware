@@ -1,4 +1,5 @@
 require 'ostruct'
+require 'json'
 
 class OpenStruct 
   def to_h_nested
@@ -9,5 +10,9 @@ class OpenStruct
       end
     end
     hash
+  end
+  
+  def self.from_json(json_string)
+    JSON.parse(json_string, object_class: OpenStruct)
   end
 end
