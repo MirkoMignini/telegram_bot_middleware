@@ -5,6 +5,7 @@ require 'cgi'
 require 'json'
 require 'excon'
 require 'rack'
+require 'http'
 
 class TelegramBotMiddleware
   TELEGRAM_ENDPOINT = 'https://api.telegram.org/'
@@ -17,13 +18,39 @@ class TelegramBotMiddleware
     
     #setup connection to telegram
     @connection = Excon.new(TELEGRAM_ENDPOINT, persistent: true)
-    
-    #setup webhook
+
     if @config.webhook.nil?
       @config.host = "#{@config.host}/" unless @config.host.end_with?('/')
       @config.webhook = "#{@config.host}#{@config.token}"
     end
-    send_to_bot('setWebhook', {url: @config.webhook})
+    
+    case @config.get_updates
+      
+      when :polling
+        send_to_bot('setWebhook', {url: ''})
+        
+        Thread.new do
+          @offset = 0
+          loop do
+            response = send_to_bot('getUpdates', {offset: @offset})
+            update = JSON.parse(response.data[:body], object_class: OpenStruct)
+            
+            if update.result.any?
+              @offset = update.result.last.update_id + 1 
+              update.result.each do |data|
+                HTTP.post @config.webhook, json: data.to_h_nested
+              end
+            end
+              
+          end
+        end
+      
+      when :webhook
+        send_to_bot('setWebhook', {url: @config.webhook})
+      
+      else
+        #TODO
+    end
   end
 
   def call(env)
@@ -54,6 +81,8 @@ class TelegramBotMiddleware
       env['QUERY_STRING'] = query_string
       env['REQUEST_METHOD'] = 'GET'
       env['REQUEST_URI'] = "https://#{req.host}#{path}"
+      #TODO
+      #use update(hash) { |name, old_value, new_value| }
       
       #call the rack stack
       status, headers, body = @app.call(env)
