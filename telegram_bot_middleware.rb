@@ -105,6 +105,12 @@ class TelegramBotMiddleware
                 send_to_bot('sendMessage', query)
               elsif query.include?(:latitude) and query.include?(:longitude)
                 send_to_bot('sendLocation', query)
+              elsif query.include?(:photo)
+                send_to_bot('sendPhoto', query)
+              elsif query.include?(:audio)
+                send_to_bot('sendAudio', query)              
+              elsif query.include?(:video)
+                send_to_bot('sendVideo', query)              
               else
                 #todo: show invalid
               end

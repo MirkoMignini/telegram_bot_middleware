@@ -38,6 +38,13 @@ get %r{/location/?$}i do
   }
 end
 
+get %r{/caption/?$}i do
+  {
+    photo: File.new('tmp/test.png'),
+    caption: 'caption'
+  }  
+end
+
 get '/*' do
   "Sono giapponese \u{0FE4E5}"
 end
