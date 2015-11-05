@@ -87,33 +87,34 @@ class TelegramBotMiddleware
       
       if status == 200
         
-        puts headers['Content-Type']
-        
         case headers['Content-Type'].split(';').first
           when 'text/html', 'application/json'          
             
-            query = Hash.new
             if body.is_a? Hash
-              
+            
               query = body.clone
               query[:chat_id] = params.message.chat.id unless query.include?(:chat_id)
               query[:reply_markup] = query[:reply_markup].to_json if query.include?(:reply_markup)
               
-              body = Array.new(1) { query[:text] }
+              body = Array.new(1) { '' }
+              
+              if query.include?(:text)
+                send_to_bot('sendMessage', query)
+              elsif query.include?(:latitude) and query.include?(:longitude)
+                send_to_bot('sendLocation', query)
+              else
+                #todo: show invalid
+              end
+              
             else
-              query = {chat_id: params.message.chat.id, text: body.first}
+              send_to_bot('sendMessage', {chat_id: params.message.chat.id, text: body.first})
             end
-            send_to_bot('sendMessage', query)
         
           when /(^image\/)/
             send_to_bot('sendPhoto', {chat_id: params.message.chat.id, photo: File.new(body)})
         
           when /(^audio\/)/
             send_to_bot('sendAudio', {chat_id: params.message.chat.id, audio: File.new(body)})
-          
-          when 'application/telegram_location'
-            send_to_bot('sendLocation', {chat_id: params.message.chat.id, latitude: body[:latitude], longitude: body[:longitude]})
-            body = Array.new(1) { '' }
         end
       end
       

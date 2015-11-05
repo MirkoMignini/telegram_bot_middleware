@@ -27,8 +27,7 @@ get %r{/audio/?$}i do
   send_file 'tmp/test.mp3'
 end
 
-get %r{/position/?$}i do
-  content_type 'application/telegram_location'
+get %r{/location/?$}i do
   {
     latitude: 38.115036, 
     longitude: 13.366640
