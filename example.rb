@@ -23,6 +23,10 @@ get %r{/image/?$}i do
   send_file 'tmp/test.png'
 end
 
+get %r{/audio/?$}i do
+  send_file 'tmp/test.mp3'
+end
+
 get '/*' do
   "Sono giapponese \u{0026C4}"
 end

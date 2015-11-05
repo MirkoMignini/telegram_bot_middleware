@@ -31,7 +31,8 @@ class TelegramBotMiddleware
         
         Thread.new do
           @offset = 0
-          loop do
+          sleep 5
+          loop do            
             response = send_to_bot('getUpdates', {offset: @offset})
             response.to_hash['result'].each do |data|
               update = OpenStruct.new(data)
@@ -86,6 +87,8 @@ class TelegramBotMiddleware
       
       if status == 200
         
+        puts headers['Content-Type']
+        
         case headers['Content-Type'].split(';').first
           when 'text/html', 'application/json'          
             
@@ -104,6 +107,9 @@ class TelegramBotMiddleware
         
           when /(^image\/)/
             send_to_bot('sendPhoto', {chat_id: params.message.chat.id, photo: File.new(body)})
+        
+          when /(^audio\/)/
+            send_to_bot('sendAudio', {chat_id: params.message.chat.id, audio: File.new(body)})
         end
       end
       
