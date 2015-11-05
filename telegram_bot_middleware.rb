@@ -120,6 +120,9 @@ class TelegramBotMiddleware
         
           when /(^audio\/)/
             send_to_bot('sendAudio', {chat_id: params.message.chat.id, audio: File.new(body)})
+          
+          when /(^video\/)/
+            send_to_bot('sendVideo', {chat_id: params.message.chat.id, video: File.new(body)})          
         end
       end
       

@@ -27,6 +27,10 @@ get %r{/audio/?$}i do
   send_file 'tmp/test.mp3'
 end
 
+get %r{/video/?$}i do
+  send_file 'tmp/test.mp4'
+end
+
 get %r{/location/?$}i do
   {
     latitude: 38.115036, 
