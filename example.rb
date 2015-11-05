@@ -1,6 +1,5 @@
 require 'sinatra'
 require_relative 'telegram_bot_middleware'
-require 'http'
 
 use TelegramBotMiddleware do |config|
   config.token = '138381425:AAEXjzZx5U5wZmiKvFmHjdNMkXJqnkHnum4'
@@ -18,10 +17,6 @@ end
 
 get %r{/hello/([\w]+)}i do |name|
   "Hello #{name}!"
-end
-
-get '/gtfs/?' do
-  HTTP.get('http://localhost:4567/').to_s
 end
 
 get %r{/image/?$}i do
