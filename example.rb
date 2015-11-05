@@ -27,6 +27,14 @@ get %r{/audio/?$}i do
   send_file 'tmp/test.mp3'
 end
 
+get %r{/position/?$}i do
+  content_type 'application/telegram_location'
+  {
+    latitude: 38.115036, 
+    longitude: 13.366640
+  }
+end
+
 get '/*' do
   "Sono giapponese \u{0026C4}"
 end

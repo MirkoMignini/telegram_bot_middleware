@@ -110,6 +110,10 @@ class TelegramBotMiddleware
         
           when /(^audio\/)/
             send_to_bot('sendAudio', {chat_id: params.message.chat.id, audio: File.new(body)})
+          
+          when 'application/telegram_location'
+            send_to_bot('sendLocation', {chat_id: params.message.chat.id, latitude: body[:latitude], longitude: body[:longitude]})
+            body = Array.new(1) { '' }
         end
       end
       
