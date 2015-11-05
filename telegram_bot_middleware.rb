@@ -87,6 +87,9 @@ class TelegramBotMiddleware
       
       if status == 200
         
+        puts headers['Content-Type']
+        puts body.inspect
+        
         case headers['Content-Type'].split(';').first
           when 'text/html', 'application/json'          
             
@@ -107,7 +110,9 @@ class TelegramBotMiddleware
               end
               
             else
-              send_to_bot('sendMessage', {chat_id: params.message.chat.id, text: body.first})
+              body.each do |data|
+                send_to_bot('sendMessage', {chat_id: params.message.chat.id, text: data})
+              end
             end
         
           when /(^image\/)/

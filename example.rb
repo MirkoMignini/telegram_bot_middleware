@@ -35,5 +35,5 @@ get %r{/location/?$}i do
 end
 
 get '/*' do
-  "Sono giapponese \u{0026C4}"
+  "Sono giapponese \u{0FE4E5}"
 end
