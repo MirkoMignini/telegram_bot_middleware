@@ -1,20 +1,23 @@
 require 'rack'
 require 'uri'
-require 'excon'
 require 'http'
+require 'httmultiparty'
+require 'persistent_httparty'
 require_relative 'ostruct_nested'
 
 class TelegramBotMiddleware
-  TELEGRAM_ENDPOINT = 'https://api.telegram.org/'
+  include HTTMultiParty
+  base_uri 'https://api.telegram.org'
+  persistent_connection_adapter pool_size: 1,
+                                keep_alive: 30,
+                                force_retry: true
   
-  def initialize(app, &block)    
+  def initialize(app, &block)
     @app = app
     
     @config = OpenStruct.new
     yield(@config) if block_given?
-    
-    #setup connection to telegram
-    @connection = Excon.new(TELEGRAM_ENDPOINT, persistent: true)
+
 
     if @config.webhook.nil?
       @config.host = "#{@config.host}/" unless @config.host.end_with?('/')
@@ -30,16 +33,13 @@ class TelegramBotMiddleware
           @offset = 0
           loop do
             response = send_to_bot('getUpdates', {offset: @offset})
-            update = OpenStruct.from_json(response.data[:body])
-            
-            if update.result.any?
-              @offset = update.result.last.update_id + 1 
-              update.result.each do |data|
-                HTTP.post @config.webhook, json: data.to_h_nested
-              end
+            response.to_hash['result'].each do |data|
+              update = OpenStruct.new(data)
+              @offset = (update.update_id + 1) if update.update_id + 1 > @offset
+              HTTP.post @config.webhook, json: update.to_h_nested
             end
-              
           end
+          
         end
       
       when :webhook
@@ -85,6 +85,7 @@ class TelegramBotMiddleware
       status, headers, body = @app.call(env)
       
       if status == 200
+        
         case headers['Content-Type'].split(';').first
           when 'text/html', 'application/json'          
             
@@ -99,8 +100,10 @@ class TelegramBotMiddleware
             else
               query = {chat_id: params.message.chat.id, text: body.first}
             end
-            puts query.inspect
             send_to_bot('sendMessage', query)
+        
+          when /(^image\/)/
+            send_to_bot('sendPhoto', {chat_id: params.message.chat.id, photo: File.new(body)})
         end
       end
       
@@ -113,6 +116,6 @@ class TelegramBotMiddleware
   end
   
   def send_to_bot(path, query)
-    @connection.post(path: "/bot#{@config.token}/#{path}", query: query)
+    response = self.class.post("/bot#{@config.token}/#{path}", query: query)
   end
 end

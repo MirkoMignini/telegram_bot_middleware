@@ -1,4 +1,5 @@
 source 'https://rubygems.org'
 gem 'sinatra'
-gem 'excon'
 gem 'http'
+gem 'httmultiparty'
+gem 'persistent_httparty'
