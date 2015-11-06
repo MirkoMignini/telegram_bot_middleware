@@ -86,9 +86,9 @@ class TelegramBotMiddleware
       # build path based on message
       # - get only message part of post params
       # - remove empty chars from beginning or end (strip)
-      # - replace spaces with /
+      # - replace first sequence of spaces with /
       # - encode as uri
-      path = URI.escape(params.message.text.strip.gsub(/\s+/, '/'))
+      path = URI.escape(params.message.text.strip.sub(/\s+/, '/'))
       # - add first / if not present
       path = "/#{path}" unless path.start_with?('/')
       

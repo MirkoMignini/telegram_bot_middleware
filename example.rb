@@ -8,14 +8,14 @@ use TelegramBotMiddleware do |config|
   config.get_updates = :polling
 end
 
-get %r{/hello/?$}i do
+get %r{/hello$}i do
   {
     text: "Hello #{params['from']['first_name']} #{params['from']['last_name']}!",
     reply_markup: {keyboard: [%w(A B), ['C', 'D']], resize_keyboard: true, one_time_keyboard: true, selective: false}
   }
 end
 
-get %r{/hello/([\w]+)}i do |name|
+get %r{/hello/(.*)}i do |name|
   "Hello #{name}!"
 end
 
@@ -42,9 +42,9 @@ get %r{/caption/?$}i do
   {
     photo: File.new('tmp/test.png'),
     caption: 'caption'
-  }  
+  }
 end
 
-get '/*' do
+get '*' do
   "Sono giapponese \u{0FE4E5}"
 end

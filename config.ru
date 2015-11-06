@@ -1,4 +1,5 @@
 require './example'
+#require './calc'
 
 $stdout.sync = true
 
