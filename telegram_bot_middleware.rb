@@ -71,7 +71,12 @@ class TelegramBotMiddleware
     end
   end
 
+  # necessary for thread safe
   def call(env)
+    dup._call(env)
+  end
+  
+  def _call(env)
     # retrieve the request object
     req = Rack::Request.new(env)
     
