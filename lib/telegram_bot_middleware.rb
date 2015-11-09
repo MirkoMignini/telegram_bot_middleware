@@ -17,8 +17,6 @@ class TelegramBotMiddleware
     # save the app var
     @app = app
     
-    puts 'Initializing...'
-    
     # create the config and populate passing do the block function
     @config = OpenStruct.new
     yield(@config) if block_given?
@@ -90,15 +88,25 @@ class TelegramBotMiddleware
       req.body.rewind
       # build an openstruct based on post params
       params = OpenStruct.from_json(req.body.read)
-      
-      # build path based on message
-      # - get only message part of post params
-      # - remove empty chars from beginning or end (strip)
-      # - replace first sequence of spaces with /
-      # - encode as uri
-      path = URI.escape(params.message.text.strip.sub(/\s+/, '/'))
-      # - add first / if not present
-      path = "/#{path}" unless path.start_with?('/')
+
+      path = nil
+      unless params.message['text'].nil?
+        # build path based on message
+        # - get only message part of post params
+        # - remove empty chars from beginning or end (strip)
+        # - replace first sequence of spaces with /
+        # - encode as uri
+        path = URI.escape(params.message.text.strip.sub(/\s+/, '/'))
+        # - add first / if not present
+        path = "/#{path}" unless path.start_with?('/')
+      else
+        %w(audio document photo sticker video voice contact location new_chat_participant left_chat_participant new_chat_title new_chat_photo delete_chat_photo group_chat_created).each do |type|
+          unless params.message[type].nil?
+            path = "/#{type}"
+            break
+          end
+        end
+      end
       
       # build the querystring using message but nested
       query_string = Rack::Utils.build_nested_query(params.message.to_h_nested)

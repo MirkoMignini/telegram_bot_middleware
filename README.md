@@ -18,7 +18,21 @@ Or install it yourself as:
 
     $ gem install telegram_bot_middleware
     
-TODO: Write more installation instructions.
+Add the middleware in config.ru or in other files base on the framework you are using:
+
+```ruby
+require 'telegram_bot_middleware'
+
+use TelegramBotMiddleware do |config|
+  config.token = '<TELEGRAM_TOKEN>'
+  config.host = '<HOST>'
+  config.get_updates = :polling or :webhook
+end
+```
+
+* To obtain a token follow the instructions in [telegram bot api](https://core.telegram.org/bots#botfather).
+* The host is the address where the script is running, for example during development could be http://127.0.0.1:9292.
+* The get_updates params specify how to get incoming messages from telegram, can be :polling or :webhook, look at the [telegram bot api](https://core.telegram.org/bots/api#getupdates) for details.
 
 ## Usage
 

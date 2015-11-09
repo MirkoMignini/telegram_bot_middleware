@@ -23,6 +23,13 @@ get %r{/video/?$}i do
   send_file 'tmp/test.mp4'
 end
 
+get '/location' do
+  {
+    latitude: params['location']['latitude'],
+    longitude: params['location']['longitude'],
+  }
+end
+
 get %r{/location/?$}i do
   {
     latitude: 38.115036, 
