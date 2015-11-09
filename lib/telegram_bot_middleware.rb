@@ -127,27 +127,14 @@ class TelegramBotMiddleware
           when 'text/html', 'application/json'          
             
             if body.is_a? Hash
-            
-              query = body.clone
-              query[:chat_id] = params.message.chat.id unless query.include?(:chat_id)
-              query[:reply_markup] = query[:reply_markup].to_json if query.include?(:reply_markup)
-              
-              body = Array.new(1) { '' }
-              
-              if query.include?(:text)
-                send_to_bot('sendMessage', query)
-              elsif query.include?(:latitude) and query.include?(:longitude)
-                send_to_bot('sendLocation', query)
-              elsif query.include?(:photo)
-                send_to_bot('sendPhoto', query)
-              elsif query.include?(:audio)
-                send_to_bot('sendAudio', query)              
-              elsif query.include?(:video)
-                send_to_bot('sendVideo', query)              
+              if (body.include?(:multiple) && body[:multiple].is_a?(Array))
+                body[:multiple].each do |item|
+                  process_hash_message(item, params)
+                end
               else
-                # TODO: invalid query
+                process_hash_message(body, params)              
               end
-              
+              body = Array.new(1) { '' }
             else
               body.each do |data|
                 send_to_bot('sendMessage', {chat_id: params.message.chat.id, text: data})
@@ -171,6 +158,26 @@ class TelegramBotMiddleware
       # normal rack flow - not a bot call
       @app.call(env)
     end
+  end
+  
+  def process_hash_message(message, params)
+    query = message.clone
+    query[:chat_id] = params.message.chat.id unless query.include?(:chat_id)
+    query[:reply_markup] = query[:reply_markup].to_json if query.include?(:reply_markup)
+
+    if query.include?(:text)
+      send_to_bot('sendMessage', query)
+    elsif query.include?(:latitude) and query.include?(:longitude)
+      send_to_bot('sendLocation', query)
+    elsif query.include?(:photo)
+      send_to_bot('sendPhoto', query)
+    elsif query.include?(:audio)
+      send_to_bot('sendAudio', query)              
+    elsif query.include?(:video)
+      send_to_bot('sendVideo', query)              
+    else
+      # TODO: invalid query
+    end  
   end
   
   def send_to_bot(path, query)

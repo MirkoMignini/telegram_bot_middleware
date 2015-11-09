@@ -1,6 +1,6 @@
-#require './example'
+require './example'
 #require './calc'
-require './chuck_norris'
+#require './chuck_norris'
 
 $stdout.sync = true
 

@@ -37,10 +37,22 @@ get %r{/location/?$}i do
   }
 end
 
-get %r{/caption/?$}i do
+get %r{/test/?$}i do
   {
-    photo: File.new('tmp/test.png'),
-    caption: 'caption'
+    multiple: 
+    [
+      {
+        photo: File.new('../../tmp/test.png'),
+        caption: 'caption'
+      },
+      {
+        text: 'ciao'
+      },
+      {
+        latitude: 38.115036, 
+        longitude: 13.366640
+      }
+    ]
   }
 end
 
