@@ -1,7 +1,17 @@
+PATH
+  remote: .
+  specs:
+    telegram_bot_middleware (0.1.0)
+      httmultiparty
+      http
+      persistent_httparty
+      rake (~> 10.0)
+
 GEM
   remote: https://rubygems.org/
   specs:
     addressable (2.3.8)
+    diff-lcs (1.2.5)
     domain_name (0.5.25)
       unf (>= 0.0.5, < 1.0.0)
     gene_pool (1.4.1)
@@ -31,15 +41,21 @@ GEM
     persistent_httparty (0.1.2)
       httparty (~> 0.9)
       persistent_http (< 2)
-    rack (1.6.4)
-    rack-protection (1.5.3)
-      rack
-    sinatra (1.4.6)
-      rack (~> 1.4)
-      rack-protection (~> 1.4)
-      tilt (>= 1.3, < 3)
+    rake (10.4.2)
+    rspec (3.3.0)
+      rspec-core (~> 3.3.0)
+      rspec-expectations (~> 3.3.0)
+      rspec-mocks (~> 3.3.0)
+    rspec-core (3.3.2)
+      rspec-support (~> 3.3.0)
+    rspec-expectations (3.3.1)
+      diff-lcs (>= 1.2.0, < 2.0)
+      rspec-support (~> 3.3.0)
+    rspec-mocks (3.3.2)
+      diff-lcs (>= 1.2.0, < 2.0)
+      rspec-support (~> 3.3.0)
+    rspec-support (3.3.0)
     thread_safe (0.3.5)
-    tilt (2.0.1)
     unf (0.1.4)
       unf_ext
     unf_ext (0.0.7.1)
@@ -48,10 +64,9 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  httmultiparty
-  http
-  persistent_httparty
-  sinatra
+  bundler (~> 1.10)
+  rspec
+  telegram_bot_middleware!
 
 BUNDLED WITH
    1.10.6

@@ -1,5 +1,4 @@
 source 'https://rubygems.org'
-gem 'sinatra'
-gem 'http'
-gem 'httmultiparty'
-gem 'persistent_httparty'
+
+# Specify your gem's dependencies in telegram_bot_middleware.gemspec
+gemspec

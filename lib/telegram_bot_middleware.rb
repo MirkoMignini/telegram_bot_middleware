@@ -4,6 +4,7 @@ require 'http'
 require 'httmultiparty'
 require 'persistent_httparty'
 require_relative 'ostruct_nested'
+require_relative 'telegram_bot_middleware/version'
 
 class TelegramBotMiddleware
   include HTTMultiParty
@@ -15,6 +16,8 @@ class TelegramBotMiddleware
   def initialize(app, &block)
     # save the app var
     @app = app
+    
+    puts 'Initializing...'
     
     # create the config and populate passing do the block function
     @config = OpenStruct.new
@@ -110,7 +113,7 @@ class TelegramBotMiddleware
       # call the rack stack
       status, headers, body = @app.call(env)
       
-      if status == 200
+      if status == 200 or status == '200'
         
         case headers['Content-Type'].split(';').first
           when 'text/html', 'application/json'          
