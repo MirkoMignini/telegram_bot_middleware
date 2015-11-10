@@ -125,19 +125,17 @@ class TelegramBotMiddleware
         
         case headers['Content-Type'].split(';').first
           when 'text/html', 'application/json'          
-            
             if body.is_a? Hash
-              if (body.include?(:multiple) && body[:multiple].is_a?(Array))
-                body[:multiple].each do |item|
-                  process_hash_message(item, params)
-                end
-              else
-                process_hash_message(body, params)              
-              end
+              process_hash_message(body.clone, params)
               body = Array.new(1) { '' }
             else
               body.each do |data|
-                send_to_bot('sendMessage', {chat_id: params.message.chat.id, text: data})
+                begin
+                  #TODO: add better json parsing to support symbols too
+                  process_hash_message(JSON.parse(data.gsub('=>', ':')), params)
+                rescue
+                  send_to_bot('sendMessage', {chat_id: params.message.chat.id, text: data})
+                end
               end
             end
         
@@ -161,20 +159,35 @@ class TelegramBotMiddleware
   end
   
   def process_hash_message(message, params)
-    query = message.clone
-    query[:chat_id] = params.message.chat.id unless query.include?(:chat_id)
-    query[:reply_markup] = query[:reply_markup].to_json if query.include?(:reply_markup)
-
-    if query.include?(:text)
-      send_to_bot('sendMessage', query)
-    elsif query.include?(:latitude) and query.include?(:longitude)
-      send_to_bot('sendLocation', query)
-    elsif query.include?(:photo)
-      send_to_bot('sendPhoto', query)
-    elsif query.include?(:audio)
-      send_to_bot('sendAudio', query)              
-    elsif query.include?(:video)
-      send_to_bot('sendVideo', query)              
+    if (message.include?(:multiple) && message[:multiple].is_a?(Array))
+      message[:multiple].each { |item| process_json_message(item, params) }
+    elsif (message.include?('multiple') && message['multiple'].is_a?(Array))
+      message['multiple'].each { |item| process_json_message(item, params) }
+    else
+      process_json_message(message, params)            
+    end
+  end
+  
+  def process_json_message(message, params)
+    message[:chat_id] = params.message.chat.id unless message.include?(:chat_id) or message.include?('chat_id')
+    
+    message[:reply_markup] = message[:reply_markup].to_json if message.include?(:reply_markup)
+    message['reply_markup'] = message['reply_markup'].to_json if message.include?('reply_markup')
+    
+    ['photo', :photo, 'audio', :audio, 'video', :video].each do |item|
+      message[item] = File.new(message[item]) if message.include?(item)
+    end
+    
+    if message.include?(:text) or message.include?('text')
+      send_to_bot('sendMessage', message)
+    elsif (message.include?(:latitude) and message.include?(:longitude)) or (message.include?('latitude') and message.include?('longitude'))
+      send_to_bot('sendLocation', message)
+    elsif message.include?(:photo) or message.include?('photo')
+      send_to_bot('sendPhoto', message)
+    elsif message.include?(:audio) or message.include?('audio')
+      send_to_bot('sendAudio', message)      
+    elsif message.include?(:video) or message.include?('video')
+      send_to_bot('sendVideo', message)
     else
       # TODO: invalid query
     end  

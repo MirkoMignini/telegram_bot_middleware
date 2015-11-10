@@ -9,6 +9,29 @@ end
 
 Cuba.define do
   on get do
+    on 'hello' do
+      res.headers["Content-Type"] = "application/json; charset=utf-8"
+      res.write({
+        'text' => 'Ciao',
+        'reply_markup' => {'keyboard' => [%w(A B), ['C', 'D']], 'resize_keyboard' => true, 'one_time_keyboard' => true, 'selective' => false}
+      })
+    end
+    
+    on 'test' do
+      res.write({
+        'multiple' => [
+          {
+            'photo' => '../../tmp/test.png',
+            'caption' => 'caption'
+          },
+          {
+            'text' => 'Ciao',
+            'reply_markup' => {'keyboard' => [%w(A B), ['C', 'D']], 'resize_keyboard' => true, 'one_time_keyboard' => true, 'selective' => false}
+          }
+        ]
+      })
+    end
+    
     on /.*/ do
       res.write 'Hello world!'
     end

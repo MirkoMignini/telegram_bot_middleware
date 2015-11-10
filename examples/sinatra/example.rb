@@ -12,7 +12,11 @@ get %r{/hello/(.*)}i do |name|
 end
 
 get %r{/image/?$}i do
-  send_file 'tmp/test.png'
+  #send_file 'tmp/test.png'
+  {
+    photo: '../../tmp/test.png',
+    caption: 'caption'
+  }  
 end
 
 get %r{/audio/?$}i do
@@ -42,7 +46,7 @@ get %r{/test/?$}i do
     multiple: 
     [
       {
-        photo: File.new('../../tmp/test.png'),
+        photo: '../../tmp/test.png',
         caption: 'caption'
       },
       {
