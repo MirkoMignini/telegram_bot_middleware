@@ -7,7 +7,7 @@ get %r{/hello$}i do
   }
 end
 
-get %r{/hello/(.*)}i do |name|
+get %r{/greets/(.*)}i do |name|
   "Hello #{name}!"
 end
 

@@ -16,6 +16,7 @@ class TelegramBotMiddleware
   def initialize(app, &block)
     # save the app var
     @app = app
+    @env = nil
     
     # create the config and populate passing do the block function
     @config = OpenStruct.new
@@ -78,8 +79,10 @@ class TelegramBotMiddleware
   end
   
   def _call(env)
+    @env = env
+    
     # retrieve the request object
-    req = Rack::Request.new(env)
+    req = Rack::Request.new(@env)
     
     # if the request is a post to bot webhhok
     if req.post? and req.path == "/#{@config.token}"
@@ -88,6 +91,8 @@ class TelegramBotMiddleware
       req.body.rewind
       # build an openstruct based on post params
       params = OpenStruct.from_json(req.body.read)
+      
+      log_debug("Message from chat: #{params}")
 
       path = nil
       unless params.message['text'].nil?
@@ -112,14 +117,14 @@ class TelegramBotMiddleware
       query_string = Rack::Utils.build_nested_query(params.message.to_h_nested)
       
       # transform the POST in GET
-      env['PATH_INFO'] = path
-      env['QUERY_STRING'] = query_string
-      env['REQUEST_METHOD'] = 'GET'
-      env['REQUEST_URI'] = "https://#{req.host}#{path}"
+      @env['PATH_INFO'] = path
+      @env['QUERY_STRING'] = query_string
+      @env['REQUEST_METHOD'] = 'GET'
+      @env['REQUEST_URI'] = "https://#{req.host}#{path}"
       # TODO use update(hash) { |name, old_value, new_value| }
       
       # call the rack stack
-      status, headers, body = @app.call(env)
+      status, headers, body = @app.call(@env)
       
       if status == 200 or status == '200'
         
@@ -193,8 +198,31 @@ class TelegramBotMiddleware
     end  
   end
   
+  def log_error(exception)
+    message = "Error: #{exception.message}\n#{exception.backtrace.join("\n")}\n"
+    log(:error, message)
+  end
+
+  def log_info(message)
+    log(:info, message)
+  end
+
+  def log_debug(message)
+    log(:debug, message)
+  end
+  
+  def log(level, message)
+    return if @env.nil?
+    if @env['rack.logger']
+      @env['rack.logger'].send(level, message)
+    else
+      @env['rack.errors'].write(message)
+    end
+  end
+  
   def send_to_bot(path, query)
+    log_debug("Sending to chat: #{path} - #{query}")
     response = self.class.post("/bot#{@config.token}/#{path}", query: query)
-    # TODO check respobse error
+    # TODO check response error and return response
   end
 end
