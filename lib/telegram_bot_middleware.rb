@@ -13,6 +13,10 @@ class TelegramBotMiddleware
   def initialize(app, &block)    
     # save the app var
     @app = app
+    
+    # local cookies hash
+    @cookies = Hash.new
+    
     @env = nil
     
     # create the config and populate passing do the block function
@@ -122,12 +126,18 @@ class TelegramBotMiddleware
       @env['QUERY_STRING'] = query_string
       @env['REQUEST_METHOD'] = 'GET'
       @env['REQUEST_URI'] = "https://#{req.host}#{path}"
-      # TODO use update(hash) { |name, old_value, new_value| }
+      
+      # if in cache a cookie for this chat was present add to the header
+      @env['HTTP_COOKIE'] = @cookies[params.message.chat.id] if @cookies.include?(params.message.chat.id)
       
       # call the rack stack
       status, headers, body = @app.call(@env)
       
+      # try to send to telegram only if no errors
       if status == 200 or status == '200'
+        
+        # if the call setted a cookie save to local cache
+        @cookies[params.message.chat.id] = headers['Set-Cookie'] if headers.include?('Set-Cookie')
         
         case headers['Content-Type'].split(';').first
           when 'text/html', 'application/json'          
