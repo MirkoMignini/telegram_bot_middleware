@@ -34,6 +34,8 @@ end
 * The host is the address where the script is running, for example during development could be http://127.0.0.1:9292.
 * The get_updates params specify how to get incoming messages from telegram, can be :polling or :webhook, look at the [telegram bot api](https://core.telegram.org/bots/api#getupdates) for details.
 
+TODO: add other config options
+
 ## Usage
 
 After the middleware is added to your preferred framework and configured as specified in installation instructions, you are ready to receive and send message to your telegram bot.
@@ -138,6 +140,9 @@ Sometimes can be useful to return more than one message, do this is very simple,
 }
 ```
 In this case the bot will send an image, a message and a location.
+
+### Session and cookies
+TODO: explain support for cookies
 
 ## Examples
 
