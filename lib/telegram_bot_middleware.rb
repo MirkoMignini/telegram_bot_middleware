@@ -9,11 +9,8 @@ require_relative 'telegram_bot_middleware/version'
 class TelegramBotMiddleware
   include HTTMultiParty
   base_uri 'https://api.telegram.org'
-  persistent_connection_adapter pool_size: 1,
-                                keep_alive: 30,
-                                force_retry: true
   
-  def initialize(app, &block)
+  def initialize(app, &block)    
     # save the app var
     @app = app
     @env = nil
@@ -21,6 +18,10 @@ class TelegramBotMiddleware
     # create the config and populate passing do the block function
     @config = OpenStruct.new
     yield(@config) if block_given?
+    
+    self.class.persistent_connection_adapter  pool_size: (@config.connection_pool_size || 2),
+                                              keep_alive: (@config.connection_keep_alive || 30),
+                                              force_retry: (@config.connection_force_retry || true)
 
     # setup webhook
     if @config.webhook.nil?
