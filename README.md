@@ -142,7 +142,9 @@ In this case the bot will send an image, a message and a location.
 ## Examples
 
 To run an example call:
+```shell
     $ rackup
+```
 In the desired example folder
 
 ### Basic examples in various frameworks
