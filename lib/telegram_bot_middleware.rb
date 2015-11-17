@@ -26,6 +26,8 @@ class TelegramBotMiddleware
     self.class.persistent_connection_adapter  pool_size: (@config.connection_pool_size || 2),
                                               keep_alive: (@config.connection_keep_alive || 30),
                                               force_retry: (@config.connection_force_retry || true)
+    
+    @config.get_updates ||= :polling
 
     # setup webhook
     if @config.webhook.nil?
