@@ -26,15 +26,16 @@ require 'telegram_bot_middleware'
 use TelegramBotMiddleware do |config|
   config.token = '<TELEGRAM_TOKEN>'
   config.host = '<HOST>'
-  config.get_updates = :polling or :webhook
 end
 ```
 
-* To obtain a token follow the instructions in [telegram bot api](https://core.telegram.org/bots#botfather).
-* The host is the address where the script is running, for example during development could be http://127.0.0.1:9292.
-* The get_updates params specify how to get incoming messages from telegram, can be :polling or :webhook, look at the [telegram bot api](https://core.telegram.org/bots/api#getupdates) for details.
-
-TODO: add other config options
+### Config options:
+* token (required): to obtain the token follow the instructions in [telegram bot api](https://core.telegram.org/bots#botfather).
+* host (required): is the address where the script is running, for example during development could be http://127.0.0.1:9292.
+* get_updates (optional, default is :polling) params specify how to get incoming messages from telegram, can be :polling or :webhook, look at the [telegram bot api](https://core.telegram.org/bots/api#getupdates) for details.
+* connection_pool_size (optional, default is 2):
+* connection_keep_alive (optional, default is 30):
+* connection_force_retry (optional, default is true):
 
 ## Usage
 
@@ -142,7 +143,7 @@ Sometimes can be useful to return more than one message, do this is very simple,
 In this case the bot will send an image, a message and a location.
 
 ### Session and cookies
-TODO: explain support for cookies
+The middleware supports the standard sessions variables, that are stored as a cookie and the values are valid for the given chat, see the [calculator sample](https://github.com/MirkoMignini/telegram_bot_middleware/blob/master/examples/sinatra/calc.rb).
 
 ## Examples
 
