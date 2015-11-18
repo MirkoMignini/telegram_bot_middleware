@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    telegram_bot_middleware (0.2.0)
+    telegram_bot_middleware (0.3.1)
       httmultiparty
       http
       persistent_httparty
