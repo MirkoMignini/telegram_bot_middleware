@@ -23,10 +23,16 @@ class TelegramBotMiddleware
     @config = OpenStruct.new
     yield(@config) if block_given?
     
+    # validate required input params
+    raise ArgumentError.new("Config error: host can't be null or empty.") if @config.host.nil? || @config.host.empty?
+    raise ArgumentError.new("Config error: token can't be null or empty.") if @config.token.nil? || @config.token.empty?
+    
+    # initialize persistent connection to telegram
     self.class.persistent_connection_adapter  pool_size: (@config.connection_pool_size || 2),
                                               keep_alive: (@config.connection_keep_alive || 30),
                                               force_retry: (@config.connection_force_retry || true)
     
+    # if get_updates is empty set to :polling by default
     @config.get_updates ||= :polling
 
     # setup webhook
