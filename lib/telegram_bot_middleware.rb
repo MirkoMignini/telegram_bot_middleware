@@ -17,15 +17,13 @@ class TelegramBotMiddleware
     # local cookies hash
     @cookies = Hash.new
     
-    @env = nil
-    
     # create the config and populate passing do the block function
     @config = OpenStruct.new
     yield(@config) if block_given?
     
     # validate required input params
-    raise ArgumentError.new("Config error: host can't be null or empty.") if @config.host.nil? || @config.host.empty?
-    raise ArgumentError.new("Config error: token can't be null or empty.") if @config.token.nil? || @config.token.empty?
+    raise ArgumentError.new("Config error: host can't be null || empty.") if @config.host.nil? || @config.host.empty?
+    raise ArgumentError.new("Config error: token can't be null || empty.") if @config.token.nil? || @config.token.empty?
     
     # initialize persistent connection to telegram
     self.class.persistent_connection_adapter  pool_size: (@config.connection_pool_size || 2),
@@ -47,18 +45,18 @@ class TelegramBotMiddleware
       # setup polling
       when :polling
         # clear the webhook in case was set in the past
-        send_to_bot('setWebhook', {url: ''})
+        send_to_telegram('setWebhook', {url: ''})
         
         # setup a thread with get_updates function
         start_get_updates_thread
       
       # setup webhook
       when :webhook
-        send_to_bot('setWebhook', {url: @config.webhook})
+        send_to_telegram('setWebhook', {url: @config.webhook})
       
       # in this case get_updates is a non valid value
       else
-        raise ArgumentError.new('Config error: get_updates must be :webhook or :polling.')
+        raise ArgumentError.new('Config error: get_updates must be :webhook || :polling.')
     end
   end
   
@@ -72,7 +70,7 @@ class TelegramBotMiddleware
       # loop forever
       loop do
         # call the getUpdates telegram function
-        response = send_to_bot('getUpdates', {offset: @offset})
+        response = send_to_telegram('getUpdates', {offset: @offset})
         # enumerate the results
         response.to_hash['result'].each do |data|
           # create an update message from the post data
@@ -91,58 +89,37 @@ class TelegramBotMiddleware
     dup._call(env)
   end
   
-  def _call(env)
-    @env = env
-    
+  def _call(env)    
     # retrieve the request object
-    req = Rack::Request.new(@env)
+    request = Rack::Request.new(env)
     
     # if the request is a post to bot webhhok
-    if req.post? and req.path == "/#{@config.token}"
+    if request.post? and request.path == "/#{@config.token}"
       
       # in case someone already read it
-      req.body.rewind
+      request.body.rewind
       # build an openstruct based on post params
-      params = OpenStruct.from_json(req.body.read)
+      params = OpenStruct.from_json(request.body.read)
       
       log_debug("Message from chat: #{params}")
-
-      path = nil
-      unless params.message['text'].nil?
-        # build path based on message
-        # - get only message part of post params
-        # - remove empty chars from beginning or end (strip)
-        # - replace first sequence of spaces with /
-        # - encode as uri
-        path = URI.escape(params.message.text.strip.sub(/\s+/, '/'))
-        # - add first / if not present
-        path = "/#{path}" unless path.start_with?('/')
-      else
-        %w(audio document photo sticker video voice contact location new_chat_participant left_chat_participant new_chat_title new_chat_photo delete_chat_photo group_chat_created).each do |type|
-          unless params.message[type].nil?
-            path = "/#{type}"
-            break
-          end
-        end
-      end
       
-      # build the querystring using message but nested
-      query_string = Rack::Utils.build_nested_query(params.message.to_h_nested)
+      # build command based on message
+      command = get_command(params)
       
       # transform the POST in GET
-      @env['PATH_INFO'] = path
-      @env['QUERY_STRING'] = query_string
-      @env['REQUEST_METHOD'] = 'GET'
-      @env['REQUEST_URI'] = "https://#{req.host}#{path}"
+      env['PATH_INFO'] = command
+      env['QUERY_STRING'] = Rack::Utils.build_nested_query(params.message.to_h_nested)
+      env['REQUEST_METHOD'] = 'GET'
+      env['REQUEST_URI'] = "https://#{request.host}#{command}"
       
       # if in cache a cookie for this chat was present add to the header
-      @env['HTTP_COOKIE'] = @cookies[params.message.chat.id] if @cookies.include?(params.message.chat.id)
+      env['HTTP_COOKIE'] = @cookies[params.message.chat.id] if @cookies.include?(params.message.chat.id)
       
       # call the rack stack
-      status, headers, body = @app.call(@env)
+      status, headers, body = @app.call(env)
       
       # try to send to telegram only if no errors
-      if status == 200 or status == '200'
+      if status == 200 || status == '200'
         
         # if the call setted a cookie save to local cache
         @cookies[params.message.chat.id] = headers['Set-Cookie'] if headers.include?('Set-Cookie')
@@ -158,19 +135,19 @@ class TelegramBotMiddleware
                   #TODO: add better json parsing to support symbols too
                   process_hash_message(JSON.parse(data.gsub('=>', ':')), params)
                 rescue
-                  send_to_bot('sendMessage', {chat_id: params.message.chat.id, text: data})
+                  send_to_telegram('sendMessage', {chat_id: params.message.chat.id, text: data})
                 end
               end
             end
         
           when /(^image\/)/
-            send_to_bot('sendPhoto', {chat_id: params.message.chat.id, photo: File.new(body)})
+            send_to_telegram('sendPhoto', {chat_id: params.message.chat.id, photo: File.new(body)})
         
           when /(^audio\/)/
-            send_to_bot('sendAudio', {chat_id: params.message.chat.id, audio: File.new(body)})
+            send_to_telegram('sendAudio', {chat_id: params.message.chat.id, audio: File.new(body)})
           
           when /(^video\/)/
-            send_to_bot('sendVideo', {chat_id: params.message.chat.id, video: File.new(body)})          
+            send_to_telegram('sendVideo', {chat_id: params.message.chat.id, video: File.new(body)})          
         end
       end
       
@@ -182,7 +159,28 @@ class TelegramBotMiddleware
     end
   end
   
-  def process_hash_message(message, params)
+  # build command based on message
+  def get_command(params)
+    unless params.message['text'].nil?
+      # build path based on message
+      # - get only message part of post params
+      # - remove empty chars from beginning || end (strip)
+      # - replace first sequence of spaces with /
+      # - encode as uri
+      command = URI.escape(params.message.text.strip.sub(/\s+/, '/'))
+      # - add first / if not present
+      command = "/#{command}" unless command.start_with?('/')
+      return command
+    else
+      %w(audio document photo sticker video voice contact location new_chat_participant left_chat_participant new_chat_title new_chat_photo delete_chat_photo group_chat_created).each do |type|
+        unless params.message[type].nil?
+          return "/#{type}"
+        end
+      end
+    end
+  end  
+  
+  def process_hash_message(message, params)    
     if (message.include?(:multiple) && message[:multiple].is_a?(Array))
       message[:multiple].each { |item| process_json_message(item, params) }
     elsif (message.include?('multiple') && message['multiple'].is_a?(Array))
@@ -193,28 +191,35 @@ class TelegramBotMiddleware
   end
   
   def process_json_message(message, params)
-    message[:chat_id] = params.message.chat.id unless message.include?(:chat_id) or message.include?('chat_id')
+    message[:chat_id] = params.message.chat.id unless message.include?(:chat_id) || message.include?('chat_id')
     
-    message[:reply_markup] = message[:reply_markup].to_json if message.include?(:reply_markup)
-    message['reply_markup'] = message['reply_markup'].to_json if message.include?('reply_markup')
+    ['reply_markup', :reply_markup].each do |item|
+      message[item] = message[item].to_json if message.include?(item)
+    end
     
     ['photo', :photo, 'audio', :audio, 'video', :video].each do |item|
       message[item] = File.new(message[item]) if message.include?(item)
     end
     
-    if message.include?(:text) or message.include?('text')
-      send_to_bot('sendMessage', message)
-    elsif (message.include?(:latitude) and message.include?(:longitude)) or (message.include?('latitude') and message.include?('longitude'))
-      send_to_bot('sendLocation', message)
-    elsif message.include?(:photo) or message.include?('photo')
-      send_to_bot('sendPhoto', message)
-    elsif message.include?(:audio) or message.include?('audio')
-      send_to_bot('sendAudio', message)      
-    elsif message.include?(:video) or message.include?('video')
-      send_to_bot('sendVideo', message)
+    if message.include?(:text) || message.include?('text')
+      send_to_telegram('sendMessage', message)
+    elsif (message.include?(:latitude) and message.include?(:longitude)) || (message.include?('latitude') and message.include?('longitude'))
+      send_to_telegram('sendLocation', message)
+    elsif message.include?(:photo) || message.include?('photo')
+      send_to_telegram('sendPhoto', message)
+    elsif message.include?(:audio) || message.include?('audio')
+      send_to_telegram('sendAudio', message)      
+    elsif message.include?(:video) || message.include?('video')
+      send_to_telegram('sendVideo', message)
     else
       # TODO: invalid query
-    end  
+    end
+  end
+  
+  def send_to_telegram(path, query)
+    log_debug("Sending to chat: #{path} - #{query}")
+    response = self.class.post("/bot#{@config.token}/#{path}", query: query)
+    # TODO check response error and return response
   end
   
   def log_error(exception)
@@ -230,18 +235,14 @@ class TelegramBotMiddleware
     log(:debug, message)
   end
   
+  # TODO: to fix env
   def log(level, message)
+    return
     return if @env.nil?
     if @env['rack.logger']
       @env['rack.logger'].send(level, message)
     else
       @env['rack.errors'].write(message)
     end
-  end
-  
-  def send_to_bot(path, query)
-    log_debug("Sending to chat: #{path} - #{query}")
-    response = self.class.post("/bot#{@config.token}/#{path}", query: query)
-    # TODO check response error and return response
   end
 end
