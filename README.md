@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/MirkoMignini/telegram_bot_middleware.svg)](https://travis-ci.org/MirkoMignini/telegram_bot_middleware)
+
 # Telegram Bot Middleware
 
 Rack middleware to communicate with a telegram bot.
