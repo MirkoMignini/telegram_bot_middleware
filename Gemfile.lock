@@ -5,6 +5,7 @@ PATH
       httmultiparty
       http
       persistent_httparty
+      rack
       rake (~> 10.0)
 
 GEM
@@ -41,6 +42,7 @@ GEM
     persistent_httparty (0.1.2)
       httparty (~> 0.9)
       persistent_http (< 2)
+    rack (1.6.4)
     rake (10.4.2)
     rspec (3.4.0)
       rspec-core (~> 3.4.0)
