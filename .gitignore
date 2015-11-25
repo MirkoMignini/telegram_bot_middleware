@@ -12,3 +12,6 @@
 
 #Mac OS files
 .DS_Store
+
+Gemfile.lock
+/vendor
