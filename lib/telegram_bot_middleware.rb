@@ -10,7 +10,7 @@ class TelegramBotMiddleware
   include HTTMultiParty
   base_uri 'https://api.telegram.org'
   
-  def initialize(app, &block)    
+  def initialize(app, &_block)
     # save the app var
     @app = app
     
@@ -218,7 +218,7 @@ class TelegramBotMiddleware
   
   def send_to_telegram(path, query)
     log_debug("Sending to chat: #{path} - #{query}")
-    response = self.class.post("/bot#{@config.token}/#{path}", query: query)
+    self.class.post("/bot#{@config.token}/#{path}", query: query)
     # TODO check response error and return response
   end
   
@@ -237,12 +237,11 @@ class TelegramBotMiddleware
   
   # TODO: to fix env
   def log(level, message)
-    return
-    return if @env.nil?
-    if @env['rack.logger']
-      @env['rack.logger'].send(level, message)
-    else
-      @env['rack.errors'].write(message)
-    end
+    #return if @env.nil?
+    #if @env['rack.logger']
+    #  @env['rack.logger'].send(level, message)
+    #else
+    #  @env['rack.errors'].write(message)
+    #end
   end
 end
