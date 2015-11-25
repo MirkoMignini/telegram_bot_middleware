@@ -1,5 +1,6 @@
 [![Build Status](https://travis-ci.org/MirkoMignini/telegram_bot_middleware.svg)](https://travis-ci.org/MirkoMignini/telegram_bot_middleware)
 [![Coverage Status](https://coveralls.io/repos/MirkoMignini/telegram_bot_middleware/badge.svg?branch=master&service=github)](https://coveralls.io/github/MirkoMignini/telegram_bot_middleware?branch=master)
+[![Code Climate](https://codeclimate.com/github/MirkoMignini/telegram_bot_middleware/badges/gpa.svg)](https://codeclimate.com/github/MirkoMignini/telegram_bot_middleware)
 
 # Telegram Bot Middleware
 
