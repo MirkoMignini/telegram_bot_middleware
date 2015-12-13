@@ -162,6 +162,7 @@ In the desired example folder
 ### Basic examples in various frameworks
 There are various ready to go basic examples in the following frameworks:
 * [Sinatra](https://github.com/MirkoMignini/telegram_bot_middleware/tree/master/examples/sinatra)
+* [Lydia](https://github.com/MirkoMignini/telegram_bot_middleware/tree/master/examples/lydia)
 * [Cuba](https://github.com/MirkoMignini/telegram_bot_middleware/tree/master/examples/cuba)
 * [Roda](https://github.com/MirkoMignini/telegram_bot_middleware/tree/master/examples/roda)
 * [Rack](https://github.com/MirkoMignini/telegram_bot_middleware/tree/master/examples/rack)
