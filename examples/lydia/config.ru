@@ -12,6 +12,12 @@ class Application < Lydia::Application
   get '/hello' do
     'Hello world!'
   end
+  
+  get '/json' do
+    {
+      key: 'value'
+    }
+  end
 end
 
 warmup do |app|
@@ -19,4 +25,4 @@ warmup do |app|
   client.get('/')
 end
 
-run Application
+run Application.new
