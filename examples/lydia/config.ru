@@ -15,7 +15,8 @@ class Application < Lydia::Application
   
   get '/json' do
     {
-      key: 'value'
+      text: "Hello #{params['from']['first_name']} #{params['from']['last_name']}!",
+      reply_markup: {keyboard: [%w(A B), ['C', 'D']], resize_keyboard: true, one_time_keyboard: true, selective: false}
     }
   end
 end
