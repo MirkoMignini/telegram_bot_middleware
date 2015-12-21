@@ -1,4 +1,5 @@
-require_relative '../../lib/telegram_bot_middleware'
+$LOAD_PATH.unshift File.expand_path('../../../lib', __FILE__)
+require 'telegram_bot_middleware'
 
 use TelegramBotMiddleware do |config|
   config.token = '138381425:AAEXjzZx5U5wZmiKvFmHjdNMkXJqnkHnum4'

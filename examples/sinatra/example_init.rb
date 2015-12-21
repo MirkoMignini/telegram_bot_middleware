@@ -1,5 +1,6 @@
+$LOAD_PATH.unshift File.expand_path('../../../lib', __FILE__)
 require 'sinatra'
-require_relative '../../lib/telegram_bot_middleware'
+require 'telegram_bot_middleware'
 
 configure :development do
   set :logging, Logger::DEBUG

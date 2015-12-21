@@ -1,5 +1,6 @@
+$LOAD_PATH.unshift File.expand_path('../../../lib', __FILE__)
 require 'cuba'
-require_relative '../../lib/telegram_bot_middleware'
+require 'telegram_bot_middleware'
 
 Cuba.use TelegramBotMiddleware do |config|
   config.token = '138381425:AAEXjzZx5U5wZmiKvFmHjdNMkXJqnkHnum4'

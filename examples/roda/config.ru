@@ -1,5 +1,6 @@
+$LOAD_PATH.unshift File.expand_path('../../../lib', __FILE__)
 require 'roda'
-require_relative '../../lib/telegram_bot_middleware'
+require 'telegram_bot_middleware'
 
 class App < Roda
   use TelegramBotMiddleware do |config|
