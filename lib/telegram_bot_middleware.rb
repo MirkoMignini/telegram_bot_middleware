@@ -103,17 +103,26 @@ class TelegramBotMiddleware
       
       log_debug("Message from chat: #{params}")
       
+      if params['message']
+        type = 'message'
+        chat_id = params.message.chat.id
+        env['QUERY_STRING'] = Rack::Utils.build_nested_query(params.message.to_h_nested)
+      elsif params['inline_query']
+        type = 'inline_query'
+        chat_id = params.inline_query.id
+        env['QUERY_STRING'] = Rack::Utils.build_nested_query(params.inline_query.to_h_nested)
+      end
+      
       # build command based on message
       command = get_command(params)
       
       # transform the POST in GET
       env['PATH_INFO'] = command
-      env['QUERY_STRING'] = Rack::Utils.build_nested_query(params.message.to_h_nested)
       env['REQUEST_METHOD'] = 'GET'
       env['REQUEST_URI'] = "https://#{request.host}#{command}"
       
       # if in cache a cookie for this chat was present add to the header
-      env['HTTP_COOKIE'] = @cookies[params.message.chat.id] if @cookies.include?(params.message.chat.id)
+      env['HTTP_COOKIE'] = @cookies[chat_id] if @cookies.include?(chat_id)
       
       # call the rack stack
       status, headers, body = @app.call(env)
@@ -122,32 +131,39 @@ class TelegramBotMiddleware
       if status == 200 || status == '200'
         
         # if the call setted a cookie save to local cache
-        @cookies[params.message.chat.id] = headers['Set-Cookie'] if headers.include?('Set-Cookie')
+        @cookies[chat_id] = headers['Set-Cookie'] if headers.include?('Set-Cookie')
         
-        case headers['Content-Type'].split(';').first
-          when 'text/html', 'application/json'          
-            if body.is_a? Hash
-              process_hash_message(body.clone, params)
-              body = Array.new(1) { '' }
-            else
-              body.each do |data|
-                begin
-                  #TODO: add better json parsing to support symbols too
-                  process_hash_message(JSON.parse(data.gsub('=>', ':')), params)
-                rescue
-                  send_to_telegram('sendMessage', {chat_id: params.message.chat.id, text: data})
+        if type == 'message'
+          case headers['Content-Type'].split(';').first
+            when 'text/html', 'application/json'          
+              if body.is_a? Hash
+                process_hash_message(body.clone, params)
+                body = Array.new(1) { '' }
+              else
+                body.each do |data|
+                  begin
+                    #TODO: add better json parsing to support symbols too
+                    process_hash_message(JSON.parse(data.gsub('=>', ':')), params)
+                  rescue
+                    send_to_telegram('sendMessage', {chat_id: chat_id, text: data})
+                  end
                 end
               end
-            end
-        
-          when /(^image\/)/
-            send_to_telegram('sendPhoto', {chat_id: params.message.chat.id, photo: File.new(body)})
-        
-          when /(^audio\/)/
-            send_to_telegram('sendAudio', {chat_id: params.message.chat.id, audio: File.new(body)})
-          
-          when /(^video\/)/
-            send_to_telegram('sendVideo', {chat_id: params.message.chat.id, video: File.new(body)})          
+
+            when /(^image\/)/
+              send_to_telegram('sendPhoto', {chat_id: chat_id, photo: File.new(body)})
+
+            when /(^audio\/)/
+              send_to_telegram('sendAudio', {chat_id: chat_id, audio: File.new(body)})
+
+            when /(^video\/)/
+              send_to_telegram('sendVideo', {chat_id: chat_id, video: File.new(body)})          
+          end
+        elsif type == 'inline_query'
+          #if body.is_a? Hash
+          send_to_telegram('answerInlineQuery', {inline_query_id: chat_id, results: body.body.to_h['results'].to_json})
+            #body = Array.new(1) { '' }
+          #end
         end
       end
       
@@ -161,22 +177,26 @@ class TelegramBotMiddleware
   
   # build command based on message
   def get_command(params)
-    unless params.message['text'].nil?
-      # build path based on message
-      # - get only message part of post params
-      # - remove empty chars from beginning || end (strip)
-      # - replace first sequence of spaces with /
-      # - encode as uri
-      command = URI.escape(params.message.text.strip.sub(/\s+/, '/'))
-      # - add first / if not present
-      command = "/#{command}" unless command.start_with?('/')
-      return command
-    else
-      %w(audio document photo sticker video voice contact location new_chat_participant left_chat_participant new_chat_title new_chat_photo delete_chat_photo group_chat_created).each do |type|
-        unless params.message[type].nil?
-          return "/#{type}"
+    if params['message']
+      unless params.message['text'].nil?
+        # build path based on message
+        # - get only message part of post params
+        # - remove empty chars from beginning || end (strip)
+        # - replace first sequence of spaces with /
+        # - encode as uri
+        command = URI.escape(params.message.text.strip.sub(/\s+/, '/'))
+        # - add first / if not present
+        command = "/#{command}" unless command.start_with?('/')
+        return command
+      else
+        %w(audio document photo sticker video voice contact location new_chat_participant left_chat_participant new_chat_title new_chat_photo delete_chat_photo group_chat_created).each do |type|
+          unless params.message[type].nil?
+            return "/#{type}"
+          end
         end
       end
+    elsif params['inline_query']
+      return '/inline_query'
     end
   end  
   

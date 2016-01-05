@@ -20,6 +20,19 @@ class Application < Lydia::Application
       reply_markup: {keyboard: [%w(A B), ['C', 'D']], resize_keyboard: true, one_time_keyboard: true, selective: false}
     }
   end
+  
+  get '/inline_query' do
+    { results:
+    [
+      {
+        type: 'article',
+        id: 'identifier',
+        title: 'Test',
+        message_text: 'Description'
+      }
+    ]  
+    }
+  end
 end
 
 warmup do |app|
