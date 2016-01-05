@@ -71,6 +71,9 @@ get %r{/hello$}i do
 end
 ```
 
+### Inline mode
+Inline mode is work in progress...
+
 ### Other types of messages
 The middleware supports also every other kind of message from bot, here is the list:
 * audio 
