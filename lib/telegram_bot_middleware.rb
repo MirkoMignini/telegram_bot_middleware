@@ -127,6 +127,10 @@ class TelegramBotMiddleware
       # call the rack stack
       status, headers, body = @app.call(env)
       
+      #body = body.body[0] if body.class == Rack::BodyProxy
+      #puts body.class
+      #puts body
+      
       # try to send to telegram only if no errors
       if status == 200 || status == '200'
         
@@ -139,6 +143,7 @@ class TelegramBotMiddleware
               if body.is_a? Hash
                 process_hash_message(body.clone, params)
                 body = Array.new(1) { '' }
+                headers['Content-Length'] = '0'
               else
                 body.each do |data|
                   begin
@@ -160,10 +165,9 @@ class TelegramBotMiddleware
               send_to_telegram('sendVideo', {chat_id: chat_id, video: File.new(body)})          
           end
         elsif type == 'inline_query'
-          #if body.is_a? Hash
-          send_to_telegram('answerInlineQuery', {inline_query_id: chat_id, results: body.body.to_h['results'].to_json})
-            #body = Array.new(1) { '' }
-          #end
+          send_to_telegram('answerInlineQuery', {inline_query_id: chat_id, results: body[:results].to_json})
+          body = Array.new(1) { '' }
+          headers['Content-Length'] = '0'
         end
       end
       

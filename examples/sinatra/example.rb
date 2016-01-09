@@ -60,6 +60,20 @@ get %r{/test/?$}i do
   }
 end
 
+get '/inline_query' do
+  { 
+    results:
+    [
+      {
+        type: 'article',
+        id: 'identifier',
+        title: 'Test',
+        message_text: 'Description'
+      }
+    ]  
+  }
+end
+
 get '*' do
   "Sono giapponese \u{0FE4E5}"
 end

@@ -72,7 +72,7 @@ end
 ```
 
 ### Inline mode
-Inline mode is work in progress...
+Inline mode is available in the current version, documentation will be added soon.
 
 ### Other types of messages
 The middleware supports also every other kind of message from bot, here is the list:
