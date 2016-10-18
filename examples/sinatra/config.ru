@@ -1,6 +1,6 @@
-require './example'
-#require './calc'
-#require './chuck_norris'
+# require './example'
+require './calc'
+# require './chuck_norris'
 
 $stdout.sync = true
 

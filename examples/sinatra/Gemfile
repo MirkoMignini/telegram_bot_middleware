@@ -1,0 +1,6 @@
+source 'https://rubygems.org'
+
+gem 'sinatra'
+gem 'http'
+gem 'httmultiparty'
+gem 'persistent_httparty'
