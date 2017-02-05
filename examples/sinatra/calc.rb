@@ -18,9 +18,13 @@ get %r{(0|1|2|3|4|5|6|7|8|9|\*|\/|-|\.|\+)$} do |cmd|
   session[:result] += cmd
 end
 
-get '/=' do
+get '/telegram/=' do
   {
     text: eval(session[:result]).to_s,
     reply_markup: {hide_keyboard: true}
   }
+end
+
+get '*' do |x|
+  { text: "Bad request: #{x}" }
 end

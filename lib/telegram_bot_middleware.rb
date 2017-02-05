@@ -6,30 +6,46 @@ require 'persistent_httparty'
 require_relative 'ostruct_nested'
 require_relative 'telegram_bot_middleware/version'
 
+class TeleBot
+  class<< self
+    def init(bot)
+      @@bot=bot
+    end
+
+    def send msg
+      @@bot.send_to_telegram('sendMessage',msg)
+    end
+  end
+end
+
+
 class TelegramBotMiddleware
   include HTTMultiParty
   base_uri 'https://api.telegram.org'
-  
+
   def initialize(app, &_block)
+    TeleBot.init(self)
+
     # save the app var
     @app = app
-    
+
     # local cookies hash
     @cookies = Hash.new
-    
+
     # create the config and populate passing do the block function
     @config = OpenStruct.new
     yield(@config) if block_given?
-    
+
+    @prefix=@config.prefix
     # validate required input params
     raise ArgumentError.new("Config error: host can't be null || empty.") if @config.host.nil? || @config.host.empty?
     raise ArgumentError.new("Config error: token can't be null || empty.") if @config.token.nil? || @config.token.empty?
-    
+
     # initialize persistent connection to telegram
     self.class.persistent_connection_adapter  pool_size: (@config.connection_pool_size || 2),
                                               keep_alive: (@config.connection_keep_alive || 30),
                                               force_retry: (@config.connection_force_retry || true)
-    
+
     # if get_updates is empty set to :polling by default
     @config.get_updates ||= :polling
 
@@ -38,28 +54,28 @@ class TelegramBotMiddleware
       @config.host = "#{@config.host}/" unless @config.host.end_with?('/')
       @config.webhook = "#{@config.host}#{@config.token}"
     end
-    
+
     # setup telegram messages input
     case @config.get_updates
-      
+
       # setup polling
       when :polling
         # clear the webhook in case was set in the past
         send_to_telegram('setWebhook', {url: ''})
-        
+
         # setup a thread with get_updates function
         start_get_updates_thread
-      
+
       # setup webhook
       when :webhook
         send_to_telegram('setWebhook', {url: @config.webhook})
-      
+
       # in this case get_updates is a non valid value
       else
         raise ArgumentError.new('Config error: get_updates must be :webhook || :polling.')
     end
   end
-  
+
   def start_get_updates_thread
     # start a new thread
     Thread.new do
@@ -92,54 +108,60 @@ class TelegramBotMiddleware
   def _call(env)    
     # retrieve the request object
     request = Rack::Request.new(env)
-    
+
     # if the request is a post to bot webhhok
     if request.post? and request.path == "/#{@config.token}"
-      
+
       # in case someone already read it
       request.body.rewind
       # build an openstruct based on post params
       params = OpenStruct.from_json(request.body.read)
-      
+
       log_debug("Message from chat: #{params}")
-      
+
       if params['message']
         type = 'message'
         chat_id = params.message.chat.id
-        env['QUERY_STRING'] = Rack::Utils.build_nested_query(params.message.to_h_nested)
+        env['QUERY_STRING'] = Rack::Utils.build_nested_query(params.message.to_h_nested,@prefix)
       elsif params['inline_query']
         type = 'inline_query'
         chat_id = params.inline_query.id
-        env['QUERY_STRING'] = Rack::Utils.build_nested_query(params.inline_query.to_h_nested)
+        env['QUERY_STRING'] = Rack::Utils.build_nested_query(params.inline_query.to_h_nested,@prefix)
       end
-      
+
       # build command based on message
       command = get_command(params)
-      
+      pr=if @prefix
+          "/#{@prefix}"
+        else
+          ''
+        end
+
       # transform the POST in GET
-      env['PATH_INFO'] = command
+#      env['PATH_INFO'] = @prefix ? "/#{@prefix}#{command}" : command
+      env['PATH_INFO'] = "#{pr}#{command}"
       env['REQUEST_METHOD'] = 'GET'
-      env['REQUEST_URI'] = "https://#{request.host}#{command}"
-      
+      env['REQUEST_URI'] = "https://#{request.host}#{pr}#{command}"
+
       # if in cache a cookie for this chat was present add to the header
       env['HTTP_COOKIE'] = @cookies[chat_id] if @cookies.include?(chat_id)
-      
+
       # call the rack stack
       status, headers, body = @app.call(env)
-      
+
       #body = body.body[0] if body.class == Rack::BodyProxy
       #puts body.class
       #puts body
-      
+
       # try to send to telegram only if no errors
       if status == 200 || status == '200'
-        
+
         # if the call setted a cookie save to local cache
         @cookies[chat_id] = headers['Set-Cookie'] if headers.include?('Set-Cookie')
-        
+
         if type == 'message'
           case headers['Content-Type'].split(';').first
-            when 'text/html', 'application/json'          
+            when 'text/html', 'application/json'
               if body.is_a? Hash
                 process_hash_message(body.clone, params)
                 body = Array.new(1) { '' }
@@ -170,7 +192,7 @@ class TelegramBotMiddleware
           headers['Content-Length'] = '0'
         end
       end
-      
+
       # return result
       [status, headers, body]
     else

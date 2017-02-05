@@ -42,6 +42,7 @@ end
 * connection_pool_size (optional, default is 2):
 * connection_keep_alive (optional, default is 30):
 * connection_force_retry (optional, default is true):
+* prefix (optional, default ''): prefix path for telegram messages.
 
 ## Usage
 
@@ -153,6 +154,15 @@ In this case the bot will send an image, a message and a location.
 
 ### Session and cookies
 The middleware supports the standard sessions variables, that are stored as a cookie and the values are valid for the given chat, see the [calculator sample](https://github.com/MirkoMignini/telegram_bot_middleware/blob/master/examples/sinatra/calc.rb).
+
+### Messages not in reply
+If you want to send notification, you can yse special class TeleBot.
+
+```ruby
+  ::TeleBot.send {chat_id: to, text: msg}
+```
+
+Warning! TeleBot can be user only for last initialized bot, multiple bots are not supported.
 
 ## Examples
 
