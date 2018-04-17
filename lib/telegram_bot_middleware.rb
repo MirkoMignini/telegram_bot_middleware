@@ -41,6 +41,16 @@ class TelegramBotMiddleware
     raise ArgumentError.new("Config error: host can't be null || empty.") if @config.host.nil? || @config.host.empty?
     raise ArgumentError.new("Config error: token can't be null || empty.") if @config.token.nil? || @config.token.empty?
 
+    # proxy settings
+    @def_options={}
+    if ! @config.proxy_addr.nil?
+      @def_options[:http_proxyaddr]=@config.proxy_addr
+      @def_options[:http_proxyport]=(@config.proxy_port || 1080).to_i
+      if ! @config.proxy_user.nil?
+        @def_options[:http_proxyuser]=@config.proxy_user
+        @def_options[:http_proxypass]=@config.proxy_pass || ''
+      end
+    end
     # initialize persistent connection to telegram
     self.class.persistent_connection_adapter  pool_size: (@config.connection_pool_size || 2),
                                               keep_alive: (@config.connection_keep_alive || 30),
@@ -80,7 +90,7 @@ class TelegramBotMiddleware
     # start a new thread
     Thread.new do
       # the initial offset is always 0
-      @offset = 0      
+      @offset = 0
       # wait 5 seconds to don't risk to post message too early when the app is not still up
       sleep 5
       # loop forever
@@ -104,8 +114,8 @@ class TelegramBotMiddleware
   def call(env)
     dup._call(env)
   end
-  
-  def _call(env)    
+
+  def _call(env)
     # retrieve the request object
     request = Rack::Request.new(env)
 
@@ -200,7 +210,7 @@ class TelegramBotMiddleware
       @app.call(env)
     end
   end
-  
+
   # build command based on message
   def get_command(params)
     if params['message']
@@ -224,29 +234,29 @@ class TelegramBotMiddleware
     elsif params['inline_query']
       return '/inline_query'
     end
-  end  
-  
+  end
+
   def process_hash_message(message, params)    
     if (message.include?(:multiple) && message[:multiple].is_a?(Array))
       message[:multiple].each { |item| process_json_message(item, params) }
     elsif (message.include?('multiple') && message['multiple'].is_a?(Array))
       message['multiple'].each { |item| process_json_message(item, params) }
     else
-      process_json_message(message, params)            
+      process_json_message(message, params)
     end
   end
-  
+
   def process_json_message(message, params)
     message[:chat_id] = params.message.chat.id unless message.include?(:chat_id) || message.include?('chat_id')
-    
+
     ['reply_markup', :reply_markup].each do |item|
       message[item] = message[item].to_json if message.include?(item)
     end
-    
+
     ['photo', :photo, 'audio', :audio, 'video', :video].each do |item|
       message[item] = File.new(message[item]) if message.include?(item)
     end
-    
+
     if message.include?(:text) || message.include?('text')
       send_to_telegram('sendMessage', message)
     elsif (message.include?(:latitude) and message.include?(:longitude)) || (message.include?('latitude') and message.include?('longitude'))
@@ -261,13 +271,15 @@ class TelegramBotMiddleware
       # TODO: invalid query
     end
   end
-  
+
   def send_to_telegram(path, query)
     log_debug("Sending to chat: #{path} - #{query}")
-    self.class.post("/bot#{@config.token}/#{path}", query: query)
+    options=@def_options.clone
+    options[:query]=query
+    self.class.post("/bot#{@config.token}/#{path}", options)
     # TODO check response error and return response
   end
-  
+
   def log_error(exception)
     message = "Error: #{exception.message}\n#{exception.backtrace.join("\n")}\n"
     log(:error, message)
@@ -280,7 +292,7 @@ class TelegramBotMiddleware
   def log_debug(message)
     log(:debug, message)
   end
-  
+
   # TODO: to fix env
   def log(level, message)
     #return if @env.nil?

@@ -43,6 +43,10 @@ end
 * connection_keep_alive (optional, default is 30):
 * connection_force_retry (optional, default is true):
 * prefix (optional, default ''): prefix path for telegram messages.
+* proxy_addr (optional): http proxy address
+* proxy_port (optional, default 1080): http proxy port
+* proxy_user (optional): http proxy user
+* proxy_pass (optional, default ''): http proxy password
 
 ## Usage
 
